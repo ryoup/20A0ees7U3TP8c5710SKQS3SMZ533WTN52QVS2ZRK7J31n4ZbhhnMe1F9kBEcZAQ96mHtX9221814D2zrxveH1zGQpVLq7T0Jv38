@@ -51,7 +51,7 @@ function processAllImages(files, conversionTable) {
         }
 
         const file = files[fileIndex];
-        console.log(`🖼️ 画像解析開始 (${fileIndex + 1}/${files.length}): ${file.name}`);
+        console.log(`🖼️ 画像解析開始1 (${fileIndex + 1}/${files.length}): ${file.name}`);
 
         processImage(file, conversionTable, (resultHTML) => {
             resultsHTML += `<h3>画像: ${file.name}</h3>${resultHTML}`;
