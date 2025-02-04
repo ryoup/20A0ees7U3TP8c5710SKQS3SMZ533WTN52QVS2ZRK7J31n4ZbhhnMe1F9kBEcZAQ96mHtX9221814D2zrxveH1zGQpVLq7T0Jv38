@@ -1,13 +1,70 @@
 document.getElementById("uploadForm").addEventListener("submit", function(e) {
     e.preventDefault(); // ページリロードを防止
 
+    console.log("✅ script.js が正常に読み込まれました");
+
     const fileInput = document.getElementById("fileInput");
     if (fileInput.files.length === 0) {
         alert("画像を選択してください！");
         return;
     }
 
-    const file = fileInput.files[0];
+    console.log(`📡 ${fileInput.files.length} 枚の画像を取得しました`);
+
+    // データリスト（変換用）の取得
+    fetch("https://ryoup.github.io/13xJKeuZFtK9269Zk8JZHT3V3y0tbz2EQkL6Hw9n9YC4zxp33QmkYN8zLtb2k2xSsA2DNQEvy0nW580arezuxdCme3hN1g03RXQT/data.csv?v=" + new Date().getTime())
+        .then(response => response.text())
+        .then(csvText => {
+            console.log("📜 取得した CSV データ:", csvText);
+            const conversionTable = parseCSV(csvText);
+            console.log("🔍 変換リスト:", conversionTable);
+
+            // 全画像を順番に処理
+            processAllImages(fileInput.files, conversionTable);
+        })
+        .catch(error => {
+            console.error("❌ データリストの読み込みエラー:", error);
+            alert("データリストの読み込みに失敗しました");
+        });
+});
+
+// CSVをパースしてオブジェクトに変換
+function parseCSV(csvText) {
+    const rows = csvText.trim().split("\n");
+    let conversionTable = {};
+    rows.forEach(row => {
+        const [originalDiff, convertedValue] = row.split(",").map(Number);
+        conversionTable[originalDiff] = convertedValue;
+    });
+    return conversionTable;
+}
+
+// 全画像を処理する関数
+function processAllImages(files, conversionTable) {
+    let resultsHTML = `<h2>解析結果</h2>`;
+    let fileIndex = 0;
+
+    function processNextImage() {
+        if (fileIndex >= files.length) {
+            document.getElementById("result").innerHTML = resultsHTML;
+            return;
+        }
+
+        const file = files[fileIndex];
+        console.log(`🖼️ 画像解析開始 (${fileIndex + 1}/${files.length}): ${file.name}`);
+
+        processImage(file, conversionTable, (resultHTML) => {
+            resultsHTML += `<h3>画像: ${file.name}</h3>${resultHTML}`;
+            fileIndex++;
+            processNextImage(); // 次の画像を処理
+        });
+    }
+
+    processNextImage();
+}
+
+// 画像解析処理
+function processImage(file, conversionTable, callback) {
     const reader = new FileReader();
 
     reader.onload = function() {
@@ -16,7 +73,6 @@ document.getElementById("uploadForm").addEventListener("submit", function(e) {
             let newWidth = img.width;
             let newHeight = img.height;
 
-            // 横幅が1080でなかったら、縦横比を保ってリサイズ
             if (newWidth !== 1080) {
                 const scaleFactor = 1080 / newWidth;
                 newWidth = 1080;
@@ -33,80 +89,42 @@ document.getElementById("uploadForm").addEventListener("submit", function(e) {
             const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
             const data = imageData.data;
 
-            const xCoords = [150, 250]; // G>=200, B<=10 を満たす x
-            const xTargets = [218, 435, 650, 867]; // R>=200, G<=100, B<=100 を満たす x
+            const targetX = 435; // x=435 の最小Yのみを取得
+            let minYForX435 = null;
+            let rgbForX435 = null;
 
-            let minCommonY = null; // x=150, 250 の両方で条件を満たす最小 y
-            let minYForX = {}; // 各 x 座標で条件を満たす最小 y (1300以上)
-
-            // 各ターゲット x 座標の初期値を設定
-            xTargets.forEach(x => {
-                minYForX[x] = null;
-            });
-
-            // 条件1: x=150, 250 の両方が G >= 200, B <= 10 を満たす最小 Y
-            for (let y = 1650; y < newHeight; y++) {
-                let meetsCondition = true; // 両方の x で条件を満たすか
-
-                for (let x of xCoords) {
-                    if (x >= newWidth) {
-                        meetsCondition = false;
-                        break;
-                    }
-                    const index = (y * newWidth + x) * 4;
-                    const r = data[index];     // 赤
-                    const g = data[index + 1]; // 緑
-                    const b = data[index + 2]; // 青
-
-                    // 条件: G >= 200, B <= 10
-                    if (!(g >= 200 && b <= 10)) {
-                        meetsCondition = false;
-                        break;
-                    }
-                }
-
-                if (meetsCondition) {
-                    minCommonY = y;
-                    break; // 最小の y が見つかったのでループを終了
-                }
-            }
-
-            // 条件2: 各 x=218, 435, 650, 867 で R >= 200, G <= 100, B <= 100 を満たす最小 Y (1300以上)
+            // 条件: x=435 の最小Yを探す
             for (let y = 1300; y < newHeight; y++) {
-                for (let x of xTargets) {
-                    if (x >= newWidth) continue;
+                if (targetX >= newWidth) continue;
 
-                    const index = (y * newWidth + x) * 4;
-                    const r = data[index];     // 赤
-                    const g = data[index + 1]; // 緑
-                    const b = data[index + 2]; // 青
+                const index = (y * newWidth + targetX) * 4;
+                const r = data[index];
+                const g = data[index + 1];
+                const b = data[index + 2];
 
-                    // 条件: R >= 200, G <= 100, B <= 100
-                    if (r >= 200 && g <= 100 && b <= 100) {
-                        if (minYForX[x] === null) {
-                            minYForX[x] = y;
-                        }
+                if (r >= 220 && g <= 100 && b <= 100) {
+                    if (minYForX435 === null) {
+                        minYForX435 = y;
+                        rgbForX435 = { R: r, G: g, B: b };
                     }
                 }
             }
 
-            // 各 x 座標で minCommonY との引き算を計算
-            let resultsHTML = `<p>画像リサイズ後のサイズ: ${newWidth}x${newHeight}</p>`;
-            resultsHTML += `<p>x=150, x=250 の両方で条件を満たす最小Y: ${minCommonY === null ? "条件を満たすピクセルなし" : minCommonY}</p>`;
+            console.log("🔍 x=435 の最小Y:", minYForX435, "RGB:", rgbForX435);
 
-            xTargets.forEach(x => {
-                const yValue = minYForX[x] === null ? "条件を満たすピクセルなし" : minYForX[x];
-                const diff = (minCommonY !== null && minYForX[x] !== null) ? (minCommonY - minYForX[x]) : "計算不可";
-                resultsHTML += `<p>x=${x} の最小Y: ${yValue}</p>`;
-                resultsHTML += `<p>Yの引き算 (minCommonY - minYForX[${x}]): ${diff}</p>`;
-            });
+            let resultHTML = "";
+            if (minYForX435 !== null) {
+                resultHTML = `<p>x=435 の最小Y: ${minYForX435}</p>`;
+            } else {
+                resultHTML = `<p>x=435 の最小Y: 条件を満たすピクセルなし</p>`;
+            }
 
-            // 結果を画面に表示
-            document.getElementById("result").innerHTML = resultsHTML;
+            console.log("📊 結果のHTML:", resultHTML);
+            callback(resultHTML);
         };
 
         img.src = reader.result;
     };
 
     reader.readAsDataURL(file);
-});
+}
