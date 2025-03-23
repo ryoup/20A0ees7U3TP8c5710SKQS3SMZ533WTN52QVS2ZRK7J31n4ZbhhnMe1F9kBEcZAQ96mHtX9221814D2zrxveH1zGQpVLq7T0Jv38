@@ -102,7 +102,7 @@ function processImage(file, conversionTable, callback) {
                 const g = data[index + 1];
                 const b = data[index + 2];
 
-                if (r >= 220 && g <= 80 && b <= 70) {
+                if (r >= 220 && g <= 100 && b <= 100) {
                     if (minYForX435 === null) {
                         minYForX435 = y;
                         rgbForX435 = { R: r, G: g, B: b };
