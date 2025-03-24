@@ -11,21 +11,6 @@ document.getElementById("uploadForm").addEventListener("submit", function(e) {
 
     console.log(`📡 ${fileInput.files.length} 枚の画像を取得しました`);
 
-    // データリスト（変換用）の取得
-    fetch("https://ryoup.github.io/13xJKeuZFtK9269Zk8JZHT3V3y0tbz2EQkL6Hw9n9YC4zxp33QmkYN8zLtb2k2xSsA2DNQEvy0nW580arezuxdCme3hN1g03RXQT/data.csv?v=" + new Date().getTime())
-        .then(response => response.text())
-        .then(csvText => {
-            console.log("📜 取得した CSV データ:", csvText);
-            const conversionTable = parseCSV(csvText);
-            console.log("🔍 変換リスト:", conversionTable);
-
-            // 全画像を順番に処理
-            processAllImages(fileInput.files, conversionTable);
-        })
-        .catch(error => {
-            console.error("❌ データリストの読み込みエラー:", error);
-            alert("データリストの読み込みに失敗しました");
-        });
 });
 
 // CSVをパースしてオブジェクトに変換
@@ -73,12 +58,6 @@ function processImage(file, conversionTable, callback) {
             let newWidth = img.width;
             let newHeight = img.height;
 
-            if (newWidth !== 1080) {
-                const scaleFactor = 1080 / newWidth;
-                newWidth = 1080;
-                newHeight = Math.round(img.height * scaleFactor);
-            }
-
             const canvas = document.createElement("canvas");
             const ctx = canvas.getContext("2d");
 
@@ -89,11 +68,11 @@ function processImage(file, conversionTable, callback) {
             const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
             const data = imageData.data;
 
-            const targetX = 435; // x=435 の最小Yのみを取得
+            const targetX = 471; // x=471 の最小Yのみを取得
             let minYForX435 = null;
             let rgbForX435 = null;
 
-            // 条件: x=435 の最小Yを探す
+            // 条件: x=471 の最小Yを探す
             for (let y = 1300; y < newHeight; y++) {
                 if (targetX >= newWidth) continue;
 
