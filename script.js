@@ -11,36 +11,11 @@ document.getElementById("uploadForm").addEventListener("submit", function(e) {
 
     console.log(`📡 ${fileInput.files.length} 枚の画像を取得しました`);
 
-    // データリスト（変換用）の取得
-    fetch("https://ryoup.github.io/13xJKeuZFtK9269Zk8JZHT3V3y0tbz2EQkL6Hw9n9YC4zxp33QmkYN8zLtb2k2xSsA2DNQEvy0nW580arezuxdCme3hN1g03RXQT/data.csv?v=" + new Date().getTime())
-        .then(response => response.text())
-        .then(csvText => {
-            console.log("📜 取得した CSV データ:", csvText);
-            const conversionTable = parseCSV(csvText);
-            console.log("🔍 変換リスト:", conversionTable);
-
-            // 全画像を順番に処理
-            processAllImages(fileInput.files, conversionTable);
-        })
-        .catch(error => {
-            console.error("❌ データリストの読み込みエラー:", error);
-            alert("データリストの読み込みに失敗しました");
-        });
+    processAllImages(fileInput.files);
 });
 
-// CSVをパースしてオブジェクトに変換
-function parseCSV(csvText) {
-    const rows = csvText.trim().split("\n");
-    let conversionTable = {};
-    rows.forEach(row => {
-        const [originalDiff, convertedValue] = row.split(",").map(Number);
-        conversionTable[originalDiff] = convertedValue;
-    });
-    return conversionTable;
-}
-
 // 全画像を処理する関数
-function processAllImages(files, conversionTable) {
+function processAllImages(files) {
     let resultsHTML = `<h2>解析結果</h2>`;
     let fileIndex = 0;
 
@@ -51,9 +26,9 @@ function processAllImages(files, conversionTable) {
         }
 
         const file = files[fileIndex];
-        console.log(`🖼️ 画像解析開始1 (${fileIndex + 1}/${files.length}): ${file.name}`);
+        console.log(`🖼️ 画像解析開始 (${fileIndex + 1}/${files.length}): ${file.name}`);
 
-        processImage(file, conversionTable, (resultHTML) => {
+        processImage(file, (resultHTML) => {
             resultsHTML += `<h3>画像: ${file.name}</h3>${resultHTML}`;
             fileIndex++;
             processNextImage(); // 次の画像を処理
@@ -64,7 +39,7 @@ function processAllImages(files, conversionTable) {
 }
 
 // 画像解析処理
-function processImage(file, conversionTable, callback) {
+function processImage(file, callback) {
     const reader = new FileReader();
 
     reader.onload = function() {
@@ -89,11 +64,9 @@ function processImage(file, conversionTable, callback) {
             const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
             const data = imageData.data;
 
-            const targetX = 471; // x=435 の最小Yのみを取得
+            const targetX = 471; // x=435 の最小Yを取得
             let minYForX435 = null;
-            let rgbForX435 = null;
 
-            // 条件: x=435 の最小Yを探す
             for (let y = 1300; y < newHeight; y++) {
                 if (targetX >= newWidth) continue;
 
@@ -103,21 +76,40 @@ function processImage(file, conversionTable, callback) {
                 const b = data[index + 2];
 
                 if (r >= 220 && g <= 100 && b <= 100) {
-                    if (minYForX435 === null) {
-                        minYForX435 = y;
-                        rgbForX435 = { R: r, G: g, B: b };
-                    }
+                    minYForX435 = y;
+                    break;
                 }
             }
 
-            console.log("🔍 x=435 の最小Y:", minYForX435, "RGB:", rgbForX435);
-
-            let resultHTML = "";
             if (minYForX435 !== null) {
-                resultHTML = `<p>x=435 の最小Y: ${minYForX435}</p>`;
-            } else {
-                resultHTML = `<p>x=435 の最小Y: 条件を満たすピクセルなし</p>`;
+                let validY = minYForX435;
+                let foundValid = false;
+
+                while (validY <= minYForX435 + 20 && validY < newHeight) {
+                    let allValid = true;
+                    for (let y = validY; y <= validY + 20 && y < newHeight; y++) {
+                        const index = (y * newWidth + targetX) * 4;
+                        const g = data[index + 1];
+                        const b = data[index + 2];
+
+                        if (g > 100 || b > 100) {
+                            allValid = false;
+                            break;
+                        }
+                    }
+                    if (allValid) {
+                        foundValid = true;
+                        break;
+                    }
+                    validY++;
+                }
+
+                minYForX435 = foundValid ? validY : null;
             }
+
+            let resultHTML = minYForX435 !== null
+                ? `<p>x=435 の最小Y: ${minYForX435}</p>`
+                : `<p>x=435 の最小Y: 条件を満たすピクセルなし</p>`;
 
             console.log("📊 結果のHTML:", resultHTML);
             callback(resultHTML);
