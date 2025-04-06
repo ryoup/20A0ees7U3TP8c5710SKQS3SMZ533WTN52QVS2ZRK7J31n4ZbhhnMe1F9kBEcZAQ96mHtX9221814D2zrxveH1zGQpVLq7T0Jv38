@@ -48,9 +48,9 @@ function processImage(file, callback) {
             let newWidth = img.width;
             let newHeight = img.height;
 
-            if (newWidth !== 1170) {
-                const scaleFactor = 1170 / newWidth;
-                newWidth = 1170;
+            if (newWidth !== 1320) {
+                const scaleFactor = 1320 / newWidth;
+                newWidth = 1320;
                 newHeight = Math.round(img.height * scaleFactor);
             }
 
@@ -64,7 +64,7 @@ function processImage(file, callback) {
             const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
             const data = imageData.data;
 
-            const targetX = 471; // x=435 の最小Yを取得
+            const targetX = 531; // x=435 の最小Yを取得
             let minYForX435 = null;
 
             for (let y = 1300; y < newHeight; y++) {
