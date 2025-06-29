@@ -48,9 +48,9 @@ function processImage(file, callback) {
             let newWidth = img.width;
             let newHeight = img.height;
 
-            if (newWidth !== 1170) {
-                const scaleFactor = 1170 / newWidth;
-                newWidth = 1170;
+            if (newWidth !== 1080) {
+                const scaleFactor = 1080 / newWidth;
+                newWidth = 1080;
                 newHeight = Math.round(img.height * scaleFactor);
             }
 
@@ -64,7 +64,7 @@ function processImage(file, callback) {
             const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
             const data = imageData.data;
 
-            const targetX = 469; // x=435 の最小Yを取得
+            const targetX = 435; // x=435 の最小Yを取得
             let minYForX435 = null;
 
             for (let y = 1300; y < newHeight; y++) {
@@ -108,7 +108,7 @@ function processImage(file, callback) {
             }
 
             let resultHTML = minYForX435 !== null
-                ? `<p>x=469 の最小Y: ${minYForX435}</p>`
+                ? `<p>x=435 の最小Y: ${minYForX435}</p>`
                 : `<p>x=435 の最小Y: 条件を満たすピクセルなし</p>`;
 
             console.log("📊 結果のHTML:", resultHTML);
