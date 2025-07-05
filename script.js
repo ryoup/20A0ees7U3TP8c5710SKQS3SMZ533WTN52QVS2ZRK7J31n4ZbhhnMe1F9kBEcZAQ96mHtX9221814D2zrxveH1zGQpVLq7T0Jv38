@@ -67,7 +67,7 @@ function processImage(file, callback) {
             const targetX = 435; // x=435 の最小Yを取得
             let minYForX435 = null;
 
-            for (let y = 1300; y < newHeight; y++) {
+            for (let y = 1250; y < newHeight; y++) {
                 if (targetX >= newWidth) continue;
 
                 const index = (y * newWidth + targetX) * 4;
@@ -108,7 +108,7 @@ function processImage(file, callback) {
             }
 
             let resultHTML = minYForX435 !== null
-                ? `<p>x=435 の最小Y: ${minYForX435}</p>`
+                ? `<p>x=867 の最小Y: ${minYForX435}</p>`
                 : `<p>x=435 の最小Y: 条件を満たすピクセルなし</p>`;
 
             console.log("📊 結果のHTML:", resultHTML);
