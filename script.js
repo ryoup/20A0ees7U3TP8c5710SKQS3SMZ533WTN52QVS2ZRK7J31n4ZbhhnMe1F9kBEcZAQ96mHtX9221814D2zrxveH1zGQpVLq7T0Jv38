@@ -64,7 +64,7 @@ function processImage(file, callback) {
             const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
             const data = imageData.data;
 
-            const targetX = 795; // x=435 の最小Yを取得
+            const targetX = 1060; // x=435 の最小Yを取得
             let minYForX435 = null;
 
             for (let y = 1250; y < newHeight; y++) {
